@@ -4,6 +4,12 @@ const mysql = require('mysql2');
 const app = express(); 
 app.use(express.json());
 
+// 1. Permite que Express lea tus archivos HTML y CSS de la carpeta
+app.use(express.static(__dirname));
+
+// 2. Ruta principal que abre tu página de login (o index) al entrar a la web
+app.get('/', (req, res) => {  res.sendFile(__dirname + '/index.html');});
+
 // Si existe la variable DATABASE_URL...
 const connectionString = process.env.DATABASE_URL || 'mysql://usuario:contraseña@localhost:3306/tu_base_local';
 
