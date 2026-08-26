@@ -1,7 +1,10 @@
 const express = require('express');
 const mysql = require('mysql2');
 
-// Si existe la variable DATABASE_URL (cuando lo subas a la nube), la usa. Si no, usa tu configuración local de XAMPP para probar en tu PC.
+const app = express(); 
+app.use(express.json());
+
+// Si existe la variable DATABASE_URL...
 const connectionString = process.env.DATABASE_URL || 'mysql://usuario:contraseña@localhost:3306/tu_base_local';
 
 const db = mysql.createConnection(connectionString);
