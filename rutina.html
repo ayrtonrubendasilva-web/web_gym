@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Rutina - Mi Gym 🏋️‍♂️</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        
+    </style>
+</head>
+<body class="rutina-page">
+
+    <div class="mobile-container">
+        <div class="header-alumno">
+            <h1>Mi Gym 🏋️‍♂️</h1>
+            <p>Tu rutina digital en el celular</p>
+        </div>
+
+        <!-- CONSULTA POR DNI -->
+        <div class="search-card" id="boxBusqueda">
+            <label>Ingresa tu número de DNI</label>
+            <input type="number" id="inputDniAlumno" placeholder="Ej: 45123456" inputmode="numeric">
+            <small class="rutina-privacidad">Usamos tu DNI solo para encontrar tu rutina.</small>
+            <button onclick="verMiRutina()">Ver Mi Rutina</button>
+        </div>
+
+        <!-- MUESTRA DE LA RUTINA EN TARJETAS -->
+        <div class="rutina-box" id="boxRutina">
+            <h2 class="alumno-welcome" id="nombreAlumno">¡Hola!</h2>
+            <div id="contenedorTarjetas"></div>
+            <p class="info-actualizacion" id="fechaRutina">Actualizado: --/--/----</p>
+            <button style="background-color: #333; color: #aaa; padding: 10px; width: 100%;" onclick="volverABuscar()">🔍 Consultar otro DNI</button>
+        </div>
+    </div>
+
+    <div id="notificacion" class="toast" role="status">
+        <span id="notificacionIcono">✓</span>
+        <span id="notificacionTexto"></span>
+    </div>
+
+    <script>
+                async function verMiRutina() {
+            const dniInput = document.getElementById('dniSocio'); // ID actualizado para el socio
+            const dni = dniInput ? dniInput.value.trim() : '';
+
+            if (!dni) {
+                alert('Por favor, ingresa tu DNI para buscar tu rutina.');
+                return;
+            }
+
+            try {
+                // Petición al backend usando el término socio
+                const response = await fetch(`/api/rutinas/socio/${dni}`);
+                
+                if (!response.ok) {
+                    throw new Error('No se encontró una rutina asociada a este DNI.');
+                }
+
+                const data = await response.json();
+                
+                // Contenedor donde se mostrará la rutina en el HTML
+                const contenedorRutina = document.getElementById('resultadoRutina');
+                
+                if (contenedorRutina) {
+                    contenedorRutina.innerHTML = `
+                        <h3>Rutina de ${data.nombreSocio}</h3>
+                        <p><strong>Gimnasio:</strong> ${data.nombreGym}</p>
+                        <div class="detalle-rutina">
+                            <pre>${data.rutinaDetalle}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error al obtener la rutina:', error);
+                alert('No se pudo encontrar la rutina. Verifica que el DNI sea correcto.');
+            }
+        }
+        let temporizadorNotificacion;
+
+        function mostrarNotificacion(mensaje, tipo = 'exito') {
+            const notificacion = document.getElementById('notificacion');
+            const texto = document.getElementById('notificacionTexto');
+            const icono = document.getElementById('notificacionIcono');
+
+            texto.innerText = mensaje;
+            notificacion.className = `toast mostrar ${tipo}`;
+            icono.innerText = tipo === 'error' ? '!' : '✓';
+
+            clearTimeout(temporizadorNotificacion);
+            temporizadorNotificacion = setTimeout(() => {
+                notificacion.classList.remove('mostrar');
+            }, 3500);
+        }
+
+                async function verMiRutina() {
+            const dni = document.getElementById('inputDniAlumno').value.trim();
+
+            if (!dni) {
+                return mostrarNotificacion('Por favor, ingresá tu DNI.', 'error');
+            }
+
+            try {
+                const res = await fetch(`/api/rutinas/alumno?dni=${encodeURIComponent(dni)}`);
+                const data = await res.json();
+
+                if (!res.ok) {
+                    mostrarNotificacion(
+                        data.error || 'No se encontró una rutina para ese DNI.',
+                        'error'
+                    );
+                    return;
+                }
+
+                console.log('Respuesta de rutina:', data);
+
+                if (!data.texto_rutina) {
+                    mostrarNotificacion(
+                        'El alumno existe, pero todavía no tiene ejercicios cargados.',
+                        'error'
+                    );
+                    return;
+                }
+
+                document.getElementById('boxBusqueda').style.display = 'none';
+                document.getElementById('boxRutina').style.display = 'block';
+
+                document.getElementById('nombreAlumno').innerText =
+                    `💪 ¡Hola, ${data.nombre || 'alumno'}!`;
+
+                const fecha = data.fecha_actualizacion
+                    ? new Date(data.fecha_actualizacion)
+                    : null;
+
+                document.getElementById('fechaRutina').innerText =
+                    fecha && !Number.isNaN(fecha.getTime())
+                        ? `Última actualización: ${fecha.toLocaleDateString('es-AR')}`
+                        : 'Rutina cargada';
+
+                const contenedor = document.getElementById('contenedorTarjetas');
+                contenedor.innerHTML = '';
+
+                const bloques = data.texto_rutina.split('/');
+
+                bloques.forEach((bloque, index) => {
+                    if (!bloque.trim()) return;
+
+                    let titulo = `DÍA ${index + 1}`;
+                    let ejercicios = bloque.trim();
+
+                    if (bloque.includes(':')) {
+                        const partes = bloque.split(':');
+                        titulo = partes[0].trim();
+                        ejercicios = partes.slice(1).join(':').trim();
+                    }
+
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = `dia-card dia-card-${index % 4}`;
+
+                    const encabezado = document.createElement('h3');
+                    encabezado.textContent = titulo;
+
+                    const detalle = document.createElement('p');
+                    detalle.textContent = ejercicios;
+
+                    tarjeta.append(encabezado, detalle);
+                    contenedor.appendChild(tarjeta);
+                });
+            } catch (error) {
+                console.error(error);
+                mostrarNotificacion('No se pudo consultar la rutina.', 'error');
+            }
+        }
+
+        function volverABuscar() {
+            document.getElementById('boxBusqueda').style.display = 'block';
+            document.getElementById('boxRutina').style.display = 'none';
+            document.getElementById('inputDniAlumno').value = '';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Gym - Panel de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        select { padding: 10px; border: none; border-radius: 4px; background-color: #3b3b4f; color: #fff; font-size: 16px; margin-bottom: 15px; width: 100%; }
+        select:focus { outline: 2px solid #00ff88; }
+        .grid-left { display: flex; flex-direction: column; gap: 20px; }
+        .select-meses { width: auto; margin-bottom: 0; padding: 5px; font-size: 14px; background-color: #2a2a35; border: 1px solid #555; }
+        .payment-cell { display: flex; align-items: center; gap: 5px; background-color: rgba(255,255,255,0.03); padding: 5px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-icon">✦</span>
+                <div>
+                    <strong>Mi Gym</strong>
+                    <small>GYM MANAGER</small>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a class="menu-item active" href="#resumen">⌂ <span>Resumen</span></a>
+                <a class="menu-item" href="#planes">▣ <span>Planes</span></a>
+                <a class="menu-item" href="#socios">♙ <span>Socios</span></a>
+                <a class="menu-item" href="#listado">☷ <span>Listado de socios</span></a>
+                <a class="menu-item" href="rutina.html">⚡ <span>Rutinas</span></a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="avatar">N</span>
+                <div>
+                    <strong id="nombreGymSidebar">Mi gimnasio</strong>
+                    <small>Administrador</small>
+                </div>
+            </div>
+        </aside>
+
+        <main class="app-main">
+    <header class="panel-topbar">
+            <div class="topbar-actions">
+                <span id="licenciaApp">App activa: -- días</span>
+
+                <button type="button" class="btn-support" onclick="contactarSoporte()">
+                    🛠️ Soporte Técnico
+                </button>
+
+                <span id="nombreGymHeader">Gimnasio: Cargando...</span>
+
+                <button type="button" class="btn-logout btn-sm" onclick="cerrarSesion()">
+                    Cerrar Sesión
+                </button>
+            </div>
+    </header>
+
+   <div class="reports-grid" id="resumen">
+    <div class="report-card metric-active metric-clickable" onclick="filtrarDesdeMetrica('al-dia')" title="Ver socios al día">
+        <h4>Socios activos</h4>
+        <p id="repActivos">0</p>
+        <span>Con membresía vigente</span>
+    </div>
+
+    <div class="report-card metric-income">
+        <h4>Ingresos cobrados</h4>
+        <p id="repIngresos">$0.00</p>
+        <span>Total registrado</span>
+    </div>
+
+    <div class="report-card metric-warning metric-clickable" onclick="filtrarDesdeMetrica('por-vencer')" title="Ver socios por vencer">
+        <h4>Por vencer</h4>
+        <p id="repPorVencer">0</p>
+        <span>Vencen en los próximos 5 días</span>
+    </div>
+
+        <div class="report-card metric-danger metric-clickable" onclick="filtrarDesdeMetrica('vencido')" title="Ver socios vencidos">
+                <p id="repVencidos">0</p>
+                <span>Requieren atención</span>
+            </div>
+    </div>
+
+    <div class="container">
+        <div class="grid-left">
+            <!-- CONFIGURADOR DE PLANES / CUOTAS -->
+            <div class="card">
+                <span id="planes" class="section-anchor"></span>
+                <h3 id="planFormTitle">Definir Planes y Precios</h3>
+                <form id="formPlan">
+                    <input type="hidden" id="planId">
+                    <div class="form-group">
+                        <label>Nombre del Plan (Ej: Pase Libre)</label>
+                        <input type="text" id="nombre_plan" required placeholder="Crossfit, Musculación, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio Mensual ($)</label>
+                        <input type="number" id="precio_plan" required placeholder="25000">
+                    </div>
+                    <button type="submit" style="width: 100%; background-color: #3498db; color: white;">Guardar Plan</button>
+                    <button
+                        type="button"
+                        id="btnCancelarPlan"
+                        class="btn-cancel-plan"
+                        style="display: none;"
+                        onclick="cancelarEdicionPlan()"
+                    >
+                        Cancelar edición
+                    </button>
+                </form>
+                    <div class="planes-guardados">
+                        <div class="planes-guardados-header">
+                            <h4>Planes guardados</h4>
+                            <span id="cantidadPlanes">0</span>
+                        </div>
+
+                        <div id="listaPlanes" class="lista-planes">
+                            <p class="sin-planes">Todavía no hay planes creados.</p>
+                        </div>
+                    </div>
+            </div>
+               
+            <!-- FORMULARIO DE SOCIOS -->
+            <div class="card">
+                <span id="socios" class="section-anchor"></span>
+                <h3 id="formTitle">Registrar Nuevo Socio</h3>
+                <form id="formSocio">
+                    <input type="hidden" id="socioId">
+                    <input type="hidden" id="monto_cuota"> 
+                    
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" id="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apellido</label>
+                        <input type="text" id="apellido" required>
+                    </div>
+                    <div class="form-group">
+                        <label>DNI / Documento</label>
+                        <input type="text" id="dni" required placeholder="Sin puntos ni espacios">
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp (ej: 5491122334455)</label>
+                        <input type="text" id="whatsapp" placeholder="Código de país + número" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Seleccionar Plan / Cuota</label>
+                        <select id="selectPlan" required onchange="actualizarPrecioOculto()">
+                            <option value="">-- Selecciona un plan --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha de Vencimiento</label>
+                        <input type="date" id="fecha_vencimiento" required>
+                    </div>
+                    <button type="submit" id="btnSubmitForm" style="width: 100%;">Agregar Socio</button>
+                    <button type="button" id="btnCancelarEdicion" style="width: 100%; background-color: #555; color: white; margin-top: 10px; display: none;" onclick="cancelarEdicion()">Cancelar Modificación</button>
+                </form>
+            </div>
+            <!-- SECCIÓN DE REPORTES ÚTILES -->
+                <div class="card" style="margin-top: 20px;">
+                    <h3>📊 Reportes Útiles</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px;">
+                        <div style="background: #2a2a35; padding: 12px; border-radius: 6px; border-left: 4px solid #2ecc71;">
+                            <span style="font-size: 12px; color: #aaa; font-weight: bold;">INGRESOS DEL MES</span>
+                            <h3 id="reporteIngresosMes" style="margin: 4px 0 0 0; color: #2ecc71;">$0</h3>
+                        </div>
+                        <div style="background: #2a2a35; padding: 12px; border-radius: 6px; border-left: 4px solid #3498db;">
+                            <span style="font-size: 12px; color: #aaa; font-weight: bold;">SOCIOS NUEVOS (ESTE MES)</span>
+                            <h3 id="reporteSociosNuevos" style="margin: 4px 0 0 0; color: #3498db;">0</h3>
+                        </div>
+                        <div style="background: #2a2a35; padding: 12px; border-radius: 6px; border-left: 4px solid #f1c40f;">
+                            <span style="font-size: 12px; color: #aaa; font-weight: bold;">VENCIMIENTOS PRÓXIMOS (5 DÍAS)</span>
+                            <h3 id="reporteVencimientosProximos" style="margin: 4px 0 0 0; color: #f1c40f;">0</h3>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button type="button" onclick="exportarExcel()" style="background-color: #217346; color: white; padding: 10px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer;">
+                            📥 Exportar a Excel (CSV)
+                        </button>
+                        <button type="button" onclick="exportarPDF()" style="background-color: #e74c3c; color: white; padding: 10px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer;">
+                            🖨️ Imprimir / Guardar PDF
+                        </button>
+                    </div>
+                </div>
+        </div>
+
+        <div class="card">
+           <div class="listado-header">
+    <div>
+       <span id="listado" class="section-anchor"></span>
+        <h3>Listado de Socios</h3>
+        <p>Administrá miembros, pagos y vencimientos.</p>
+    </div>
+
+            <div class="table-filters">
+                    <select id="filtroEstado" onchange="filtrarSocios()">
+                        <option value="todos">Todos los estados</option>
+                        <option value="al-dia">Al día</option>
+                        <option value="por-vencer">Por vencer</option>
+                        <option value="vencido">Vencidos</option>
+                    </select>
+
+                    <input
+                        type="text"
+                        id="buscadorDni"
+                        placeholder="🔍 Buscar por DNI..."
+                        oninput="filtrarSocios()"
+                    >
+                </div>
+            </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Socio</th>
+                            <th>WhatsApp</th>
+                            <th>Vencimiento</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaSocios"></tbody>
+                </table>
+            </div>
+        </div>
+        </main>
+    </div>
+                <div id="modalBajaSocio" class="modal-confirmacion">
+            <div class="modal-contenido">
+                <div class="modal-icono">!</div>
+                <h3>Dar de baja al socio</h3>
+                <p>El socio dejará de figurar en el listado. ¿Querés continuar?</p>
+
+                <div class="modal-acciones">
+                    <button type="button" class="modal-cancelar" onclick="cerrarModalSocio()">
+                        Cancelar
+                    </button>
+
+                    <button type="button" class="modal-confirmar" onclick="confirmarBajaSocio()">
+                        Sí, dar de baja
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="modalConfirmacion" class="modal-confirmacion">
+            <div class="modal-contenido">
+                <div class="modal-icono">!</div>
+                <h3>Dar de baja el plan</h3>
+                <p>Esta acción no se puede deshacer. ¿Querés continuar?</p>
+
+                <div class="modal-acciones">
+                    <button type="button" class="modal-cancelar" onclick="cerrarModalPlan()">
+                        Cancelar
+                    </button>
+
+                    <button type="button" class="modal-confirmar" onclick="confirmarEliminacionPlan()">
+                        Sí, dar de baja
+                    </button>
+            </div>
+         </div>
+    </div>
+        <div id="modalRutina" class="modal-rutina">
+            <div class="modal-rutina-contenido rutina-editor">
+                <div class="modal-rutina-icono">🏋️</div>
+                <h3 id="tituloModalRutina">Asignar rutina</h3>
+                <p id="nombreAlumnoRutina">Alumno</p>
+
+                <div id="estadoRutina" class="estado-rutina"></div>
+
+                <div class="rutina-toolbar">
+                    <select id="diaPrearmado">
+                        <option value="">Agregar día prearmado...</option>
+                        <option value="LUNES: Pecho y tríceps">Lunes — Pecho y tríceps</option>
+                        <option value="MARTES: Espalda y bíceps">Martes — Espalda y bíceps</option>
+                        <option value="MIÉRCOLES: Piernas">Miércoles — Piernas</option>
+                        <option value="JUEVES: Hombros y abdomen">Jueves — Hombros y abdomen</option>
+                        <option value="VIERNES: Full body">Viernes — Full body</option>
+                        <option value="SÁBADO: Cardio y movilidad">Sábado — Cardio y movilidad</option>
+                    </select>
+
+                    <button type="button" class="btn-agregar-dia" onclick="agregarDiaPrearmado()">
+                        + Día
+                    </button>
+                </div>
+
+                <div class="agregar-ejercicio">
+                    <input id="nombreEjercicio" type="text" placeholder="Ejercicio: Banco plano">
+                    <input id="seriesEjercicio" type="number" min="1" placeholder="Series">
+                    <input id="repeticionesEjercicio" type="text" placeholder="Reps: 10 / 12-15">
+                    <button type="button" onclick="agregarEjercicio()">+ Ejercicio</button>
+                </div>
+
+                <label for="textoRutina">Rutina del alumno</label>
+                <textarea id="textoRutina" placeholder="LUNES: Pecho y tríceps
+                Banco plano — 4 x 10
+                Press inclinado — 3 x 12
+
+                /
+                MIÉRCOLES: Piernas
+                Sentadilla — 4 x 10"></textarea>
+
+                <small>
+                    Cada día se separa con <strong>/</strong>. Podés editar libremente el texto antes de guardar.
+                </small>
+
+                <div class="modal-rutina-acciones">
+                    <button type="button" class="modal-cancelar" onclick="cerrarModalRutina()">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn-guardar-rutina" id="btnGuardarRutina" onclick="guardarRutina()">
+                        Confirmar y guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+     <div id="notificacion" class="toast" role="status">
+        <span id="notificacionIcono">✓</span>
+        <span id="notificacionTexto"></span>
+    </div>
+    <script>
+         const duenoId = localStorage.getItem('duenoId');
+        const nombreGym = localStorage.getItem('nombreGym');
+        const diasRestantes = localStorage.getItem('diasRestantes'); // Nueva
+
+        let listaSociosMemoria = [];
+        let listaPlanesMemoria = [];
+
+        if (!duenoId) window.location.href = '/login.html';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('nombreGymHeader').innerText = `Gimnasio: ${nombreGym}`;
+            
+            // Mostramos los días que le quedan al dueño en la cabecera
+            const widgetLicencia = document.getElementById('licenciaApp');
+            if (widgetLicencia && diasRestantes !== null) {
+                widgetLicencia.innerText = `App activa: ${diasRestantes} días`;
+                if (parseInt(diasRestantes) <= 3) {
+                    widgetLicencia.style.backgroundColor = '#d9534f'; // Alerta roja si queda poco tiempo
+                }
+            }
+
+            actualizarPanel();
+        });
+
+        function cerrarSesion() { localStorage.clear(); window.location.href = '/login.html'; }
+        let temporizadorNotificacion;
+
+        function mostrarNotificacion(mensaje, tipo = 'exito') {
+            const notificacion = document.getElementById('notificacion');
+            const texto = document.getElementById('notificacionTexto');
+            const icono = document.getElementById('notificacionIcono');
+
+            texto.innerText = mensaje;
+
+            notificacion.className = `toast mostrar ${tipo}`;
+            icono.innerText = tipo === 'error' ? '!' : '✓';
+
+            clearTimeout(temporizadorNotificacion);
+
+            temporizadorNotificacion = setTimeout(() => {
+                notificacion.classList.remove('mostrar');
+            }, 3500);
+        }
+
+        function actualizarPanel() {
+            obtenerPlanes();
+            obtenerSocios();
+            obtenerReportes();
+        }
+
+        async function obtenerReportes() {
+            const res = await fetch(`/api/reportes?duenoId=${duenoId}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('repActivos').innerText = data.activos;
+                document.getElementById('repIngresos').innerText = `$${parseFloat(data.ingresos).toFixed(2)}`;
+            }
+        }
+
+        document.getElementById('formPlan').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const planId = document.getElementById('planId').value;
+
+                    const planData = {
+                        nombre_plan: document.getElementById('nombre_plan').value,
+                        precio: document.getElementById('precio_plan').value,
+                        duenoId: duenoId
+                    };
+
+                    const res = await fetch(
+                        planId ? `/api/planes/${planId}` : '/api/planes',
+                        {
+                            method: planId ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(planData)
+                        }
+                    );
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        mostrarNotificacion(
+                            planId ? 'Plan actualizado correctamente' : 'Plan guardado con éxito'
+                        );
+
+                        cancelarEdicionPlan();
+                        obtenerPlanes();
+                    } else {
+                        mostrarNotificacion(data.error || 'No se pudo guardar el plan', 'error');
+                    }
+                });
+
+        async function obtenerPlanes() {
+            const res = await fetch(`/api/planes?duenoId=${duenoId}`);
+            listaPlanesMemoria = await res.json();
+            renderizarPlanes(listaPlanesMemoria);
+            
+            const select = document.getElementById('selectPlan');
+            select.innerHTML = '<option value="">-- Selecciona un plan --</option>';
+            
+            listaPlanesMemoria.forEach(plan => {
+                const opt = document.createElement('option');
+                opt.value = plan.id;
+                opt.innerText = `${plan.nombre_plan} ($${plan.precio})`;
+                select.appendChild(opt);
+            });
+        }
+        function renderizarPlanes(planes) {
+            const contenedor = document.getElementById('listaPlanes');
+            const cantidad = document.getElementById('cantidadPlanes');
+
+            cantidad.innerText = planes.length;
+
+            if (planes.length === 0) {
+                contenedor.innerHTML = `
+                    <p class="sin-planes">Todavía no hay planes creados.</p>
+                `;
+                return;
+            }
+
+            contenedor.innerHTML = planes.map(plan => `
+                <div class="plan-item">
+                    <div class="plan-icon">▣</div>
+                    <div>
+                        <strong>${plan.nombre_plan}</strong>
+                        <small>Plan mensual</small>
+                    </div>
+                    <div class="plan-actions">
+                        <span>$${Number(plan.precio).toLocaleString('es-AR')}</span>
+                        <button type="button" class="btn-plan-edit" onclick="editarPlan(${plan.id})">Editar</button>
+                        <button type="button" class="btn-plan-delete" onclick="eliminarPlan(${plan.id})">Baja</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+       
+
+            function editarPlan(id) {
+                    const plan = listaPlanesMemoria.find(p => p.id === id);
+
+                    if (!plan) return;
+
+                    document.getElementById('planId').value = plan.id;
+                    document.getElementById('nombre_plan').value = plan.nombre_plan;
+                    document.getElementById('precio_plan').value = plan.precio;
+
+                    document.getElementById('planFormTitle').innerText = 'Modificar Plan';
+                    document.getElementById('btnCancelarPlan').style.display = 'block';
+
+                    document.getElementById('formPlan').scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+
+                function cancelarEdicionPlan() {
+                    document.getElementById('formPlan').reset();
+                    document.getElementById('planId').value = '';
+                    document.getElementById('planFormTitle').innerText = 'Definir Planes y Precios';
+                    document.getElementById('btnCancelarPlan').style.display = 'none';
+                }
+
+                let planPendienteEliminar = null;
+
+            function eliminarPlan(id) {
+                planPendienteEliminar = id;
+                document.getElementById('modalConfirmacion').classList.add('mostrar-modal');
+            }
+
+            function cerrarModalPlan() {
+                planPendienteEliminar = null;
+                document.getElementById('modalConfirmacion').classList.remove('mostrar-modal');
+            }
+
+            async function confirmarEliminacionPlan() {
+                if (!planPendienteEliminar) return;
+
+                const id = planPendienteEliminar;
+                const res = await fetch(`/api/planes/${id}?duenoId=${duenoId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await res.json();
+                cerrarModalPlan();
+
+                if (res.ok) {
+                    mostrarNotificacion('Plan eliminado correctamente');
+                    obtenerPlanes();
+                } else {
+                    mostrarNotificacion(
+                        data.error || 'No se pudo eliminar el plan',
+                        'error'
+                    );
+                }
+            }
+           
+        function actualizarPrecioOculto() {
+            const planId = document.getElementById('selectPlan').value;
+            const planSeleccionado = listaPlanesMemoria.find(p => p.id == planId);
+            document.getElementById('monto_cuota').value = planSeleccionado ? planSeleccionado.precio : 0;
+        }
+
+        document.getElementById('formSocio').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('socioId').value;
+            const socioData = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                plan_id: document.getElementById('selectPlan').value,
+                dni: document.getElementById('dni').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                monto_cuota: document.getElementById('monto_cuota').value,
+                fecha_vencimiento: document.getElementById('fecha_vencimiento').value,
+                duenoId: duenoId
+            };
+
+            let res = await fetch(id ? `/api/socios/${id}` : '/api/socios', {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(socioData)
+            });
+
+            if (res.ok) {
+                mostrarNotificacion(id ? 'Socio modificado correctamente' : 'Socio agregado con éxito');
+                cancelarEdicion();
+                actualizarPanel();
+            }
+        });
+
+        async function obtenerSocios() {
+                const res = await fetch(`/api/socios?duenoId=${duenoId}`);
+                listaSociosMemoria = await res.json();
+                actualizarMetricasVencimiento(listaSociosMemoria);
+                calcularReportesUtiles(listaSociosMemoria);
+                renderizarTabla(listaSociosMemoria);
+            }
+
+                function actualizarMetricasVencimiento(socios) {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            let porVencer = 0;
+            let vencidos = 0;
+
+            socios.forEach(socio => {
+                const fecha = new Date(socio.fecha_vencimiento);
+                fecha.setHours(0, 0, 0, 0);
+
+                const diferenciaDias = Math.ceil(
+                    (fecha - hoy) / (1000 * 60 * 60 * 24)
+                );
+
+                if (diferenciaDias < 0) {
+                    vencidos++;
+                } else if (diferenciaDias <= 5) {
+                    porVencer++;
+                }
+            });
+
+            document.getElementById('repPorVencer').innerText = porVencer;
+            document.getElementById('repVencidos').innerText = vencidos;
+        }
+       function renderizarTabla(socios) {
+            const tabla = document.getElementById('tablaSocios');
+            tabla.innerHTML = '';
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0);
+
+            socios.forEach(socio => {
+                const fechaVencimiento = new Date(socio.fecha_vencimiento);
+                fechaVencimiento.setHours(0,0,0,0);
+                const diferenciaDias = Math.ceil((fechaVencimiento - hoy) / (1000 * 60 * 60 * 24));
+
+                let estadoTexto = 'Al día', estadoClass = 'al-dia', filaClass = '';
+                if (diferenciaDias < 0) {
+                    estadoTexto = 'Vencido'; estadoClass = 'vencido'; filaClass = 'fila-vencido';
+                } else if (diferenciaDias <= 5) {
+                    estadoTexto = 'Por vencer'; estadoClass = 'por-vencer'; filaClass = 'fila-por-vencer';
+                }
+                
+                const fechaISO = socio.fecha_vencimiento.split('T')[0];
+                const fechaFormateada = new Date(socio.fecha_vencimiento).toLocaleDateString('es-AR', { timeZone: 'UTC' });
+
+                // --- LÓGICA WHATSAPP INTELIGENTE ---
+                let mensajeWp = '';
+                let colorBotonWp = '#25D366';
+                let textoBotonWp = '💬 WhatsApp';
+
+                if (diferenciaDias < 0) {
+                    const diasVencido = Math.abs(diferenciaDias);
+                    mensajeWp = `Hola *${socio.nombre}*, te escribimos de *Mi Gym*. Notamos que tu cuota venció hace ${diasVencido} día(s). ¡Te esperamos para ponerte al día y seguir entrenando! 💪`;
+                    textoBotonWp = '⚠️ Avisar Vencido';
+                    colorBotonWp = '#d9534f';
+                } else if (diferenciaDias === 0) {
+                    mensajeWp = `Hola *${socio.nombre}*, te escribimos de *Mi Gym*. Te recordamos que tu cuota *vence hoy*. ¡Pásate por el gimnasio para renovarla! 🏋️‍♂️`;
+                    textoBotonWp = '🔔 Vence Hoy';
+                    colorBotonWp = '#f0ad4e';
+                } else if (diferenciaDias <= 3) {
+                    mensajeWp = `Hola *${socio.nombre}*, te escribimos de *Mi Gym*. Te recordamos que tu cuota vence en ${diferenciaDias} día(s) (${fechaFormateada}). ¡No te cuelgues! 🙌`;
+                    textoBotonWp = '⏰ Por Vencer';
+                } else {
+                    mensajeWp = `Hola *${socio.nombre}*, ¡gracias por entrenar en *Mi Gym*! Tu cuota está al día hasta el ${fechaFormateada}. 🚀`;
+                }
+
+                const telefonoLimpio = socio.whatsapp ? socio.whatsapp.replace(/\D/g, '') : '';
+                const urlWp = `https://api.whatsapp.com/send?phone=${telefonoLimpio}&text=${encodeURIComponent(mensajeWp)}`;
+                // ------------------------------------
+
+                const tr = document.createElement('tr');
+                if (filaClass) tr.className = filaClass;
+
+                tr.innerHTML = `
+                    <td>
+                        <strong onclick="abrirPerfilSocio(${socio.id})" style="cursor: pointer; color: #0066cc; text-decoration: underline;" title="Ver ficha completa">
+                            ${socio.nombre} ${socio.apellido}
+                        </strong><br>
+                        <small style="color: #aaa;">DNI: ${socio.dni}</small><br>
+                        <span class="badge ${estadoClass}">${estadoTexto}</span>
+                    </td>
+                    <td>${socio.whatsapp}</td>
+                    <td>${fechaFormateada} - ($${socio.monto_cuota})</td>
+                    <td>
+                        <div class="actions-cell">
+                            <div class="payment-cell" style="margin-bottom: 5px;">
+                                <select id="meses-${socio.id}" class="select-meses">
+                                    <option value="1">1 Mes</option>
+                                    <option value="2">2 Meses</option>
+                                    <option value="3">3 Meses</option>
+                                    <option value="6">6 Meses</option>
+                                    <option value="12">1 Año</option>
+                                </select>
+                                <button class="btn-sm btn-pagar" onclick="registrarPago(${socio.id})">Cobrar</button>
+                            </div>
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button class="btn-sm" style="background-color: #9b59b6; color: white;" onclick="abrirCreadorRutina(${socio.id}, '${socio.nombre}', '${socio.apellido}')">Rutina</button>
+                                <button class="btn-sm btn-edit" onclick="cargarFormularioEdicion(${socio.id}, '${socio.nombre}', '${socio.apellido}', ${socio.plan_id}, '${socio.dni}', '${socio.whatsapp}', ${socio.monto_cuota}, '${socio.fecha_vencimiento}')">Modificar</button>
+                                <button class="btn-sm btn-delete" onclick="eliminarSocio(${socio.id})">Baja</button>
+                                <a href="${urlWp}" target="_blank" style="background-color: ${colorBotonWp}; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block;">
+                                    ${textoBotonWp}
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tabla.appendChild(tr);
+            });
+        }
+
+            function filtrarSocios() {
+                const texto = document.getElementById('buscadorDni').value.trim();
+                const estadoSeleccionado = document.getElementById('filtroEstado').value;
+
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+
+                const sociosFiltrados = listaSociosMemoria.filter(socio => {
+                    const coincideDni = !texto || (
+                        socio.dni && socio.dni.includes(texto)
+                    );
+
+                    const fechaVencimiento = new Date(socio.fecha_vencimiento);
+                    fechaVencimiento.setHours(0, 0, 0, 0);
+
+                    const diferenciaDias = Math.ceil(
+                        (fechaVencimiento - hoy) / (1000 * 60 * 60 * 24)
+                    );
+
+                    let estado = 'al-dia';
+
+                    if (diferenciaDias < 0) {
+                        estado = 'vencido';
+                    } else if (diferenciaDias <= 5) {
+                        estado = 'por-vencer';
+                    }
+                    function filtrarDesdeMetrica(estado) {
+                        document.getElementById('filtroEstado').value = estado;
+                        filtrarSocios();
+
+                        document.getElementById('listado').scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+
+                    const coincideEstado =
+                        estadoSeleccionado === 'todos' ||
+                        estado === estadoSeleccionado;
+
+                    return coincideDni && coincideEstado;
+                });
+
+                renderizarTabla(sociosFiltrados);
+            }
+
+              // ENVIAR PAGO CON CANTIDAD DE MESES SELECCIONADOS
+                async function registrarPago(id) {
+                    const cantidadMeses = document.getElementById(`meses-${id}`).value;
+
+                    try {
+                        const res = await fetch(`/api/socios/${id}/pagar`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ meses: cantidadMeses })
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+                            throw new Error(data.error || 'No se pudo registrar el pago.');
+                        }
+
+                        mostrarNotificacion('Membresía renovada correctamente');
+
+                        // --- ENVIAR COMPROBANTE POR WHATSAPP AUTOMÁTICAMENTE ---
+                        const comp = data.comprobante;
+                        const mensaje = 
+                            `🏋️‍♂️ *COMPROBANTE DE PAGO - MI GYM* 🏋️‍♂️\n\n` +
+                            `Hola *${comp.nombre}*, ¡gracias por tu pago!\n\n` +
+                            `📅 *Fecha:* ${new Date(comp.fecha_pago).toLocaleDateString('es-AR')}\n` +
+                            `⏳ *Meses acreditados:* ${comp.meses}\n` +
+                            `💰 *Monto abonado:* $${comp.monto}\n` +
+                            `📆 *Vence el:* ${new Date(comp.fecha_vencimiento).toLocaleDateString('es-AR')}\n\n` +
+                            `¡A seguir entrenando con todo! 💪`;
+
+                        const telefonoLimpio = comp.whatsapp.replace(/\D/g, '');
+                        const urlWhatsApp = `https://api.whatsapp.com/send?phone=${telefonoLimpio}&text=${encodeURIComponent(mensaje)}`;
+                        window.open(urlWhatsApp, '_blank');
+                        // ------------------------------------------------------
+
+                        actualizarPanel();
+
+                    } catch (error) {
+                        console.error('Error al registrar pago:', error);
+                        mostrarNotificacion(error.message, 'error');
+                    }
+                }
+                    
+        
+
+        function cargarFormularioEdicion(id, nombre, apellido, plan_id, dni, whatsapp, cuota, fecha) {
+            document.getElementById('socioId').value = id;
+            document.getElementById('nombre').value = nombre;
+            document.getElementById('apellido').value = apellido;
+            document.getElementById('dni').value = dni;
+            document.getElementById('whatsapp').value = whatsapp;
+            document.getElementById('selectPlan').value = plan_id;
+            document.getElementById('monto_cuota').value = cuota;
+            document.getElementById('fecha_vencimiento').value = fecha;
+            document.getElementById('formTitle').innerText = 'Modificar Socio';
+            document.getElementById('btnSubmitForm').innerText = 'Guardar Cambios';
+            document.getElementById('btnCancelarEdicion').style.display = 'block';
+        }
+
+        function cancelarEdicion() {
+            document.getElementById('formSocio').reset();
+            document.getElementById('socioId').value = '';
+            document.getElementById('formTitle').innerText = 'Registrar Nuevo Socio';
+            document.getElementById('btnSubmitForm').innerText = 'Agregar Socio';
+            document.getElementById('btnCancelarEdicion').style.display = 'none';
+        }
+
+        let socioPendienteEliminar = null;
+
+        function eliminarSocio(id) {
+            socioPendienteEliminar = id;
+            document.getElementById('modalBajaSocio').classList.add('mostrar-modal');
+        }
+
+        function cerrarModalSocio() {
+            socioPendienteEliminar = null;
+            document.getElementById('modalBajaSocio').classList.remove('mostrar-modal');
+        }
+
+        async function confirmarBajaSocio() {
+            if (!socioPendienteEliminar) return;
+
+            const res = await fetch(`/api/socios/${socioPendienteEliminar}`, {
+                method: 'DELETE'
+            });
+
+            cerrarModalSocio();
+
+            if (res.ok) {
+                mostrarNotificacion('Socio dado de baja correctamente');
+                actualizarPanel();
+            } else {
+                mostrarNotificacion('No se pudo dar de baja al socio', 'error');
+            }
+        }
+
+        function enviarRecordatorio(nombre, whatsapp, fecha) {
+            var num = whatsapp.replace(/\D/g, ''); 
+            var txt = 'Hola ' + nombre + ', tu cuota venció el ' + fecha + '. ¡Te esperamos! 💪🏋️‍♂️';
+            window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(txt), '_blank');
+        }
+
+                // FUNCIÓN PARA CONTACTAR AL DESARROLLADOR POR SOPORTE
+        function contactarSoporte() {
+            const nombreGymActual = localStorage.getItem('nombreGym') || 'Mi Gimnasio';
+            const msg = `Hola Ayrton, necesito soporte técnico con el panel de mi gimnasio (${nombreGymActual}).`;
+            
+            // REEMPLAZA ESTE NÚMERO POR EL TUYO REAL (Ej para Arg: 549 + tu número completo)
+            const tuTelefonoSoporte = '5493754410115'; 
+            
+            const url = 'https://wa.me/' + tuTelefonoSoporte + '?text=' + encodeURIComponent(msg);
+            window.open(url, '_blank');
+        }
+
+        // FUNCIÓN PARA QUE EL DUEÑO ESCRIBA LA RUTINA DEL ALUMNO
+       let socioRutinaSeleccionado = null;
+        let nombreRutinaSeleccionado = '';
+
+        async function abrirCreadorRutina(socioId, nombreCompleto) {
+            socioRutinaSeleccionado = socioId;
+            nombreRutinaSeleccionado = nombreCompleto;
+
+            const modal = document.getElementById('modalRutina');
+            const textarea = document.getElementById('textoRutina');
+            const estado = document.getElementById('estadoRutina');
+            const titulo = document.getElementById('tituloModalRutina');
+
+            document.getElementById('nombreAlumnoRutina').innerText =
+                `Rutina para ${nombreCompleto}`;
+
+            textarea.value = '';
+            estado.textContent = 'Buscando rutina asignada...';
+            estado.className = 'estado-rutina';
+            modal.classList.add('mostrar-modal-rutina');
+
+            try {
+              const res = await fetch(`/api/rutinas/socio/${socioId}`);
+                if (!res.ok) throw new Error();
+
+                const data = await res.json();
+
+                if (data.existe) {
+                    textarea.value = data.texto_rutina || '';
+                    titulo.textContent = 'Editar rutina asignada';
+
+                    const fecha = data.fecha_actualizacion
+                        ? new Date(data.fecha_actualizacion).toLocaleDateString('es-AR')
+                        : '';
+
+                    estado.textContent = `✓ Este alumno ya tiene una rutina asignada${fecha ? ` · Actualizada: ${fecha}` : ''}`;
+                    estado.className = 'estado-rutina existe';
+                } else {
+                    titulo.textContent = 'Asignar nueva rutina';
+                    estado.textContent = 'Este alumno todavía no tiene una rutina asignada.';
+                    estado.className = 'estado-rutina vacia';
+                }
+            } catch {
+                estado.textContent = 'No se pudo verificar la rutina actual.';
+                estado.className = 'estado-rutina error';
+            }
+        }
+
+        function agregarDiaPrearmado() {
+            const selector = document.getElementById('diaPrearmado');
+            const dia = selector.value;
+            const textarea = document.getElementById('textoRutina');
+
+            if (!dia) {
+                mostrarNotificacion('Seleccioná un día prearmado.', 'error');
+                return;
+            }
+
+            const separador = textarea.value.trim() ? '\n\n/\n\n' : '';
+            textarea.value += `${separador}${dia}\n`;
+            selector.value = '';
+            textarea.focus();
+        }
+
+        function agregarEjercicio() {
+            const nombre = document.getElementById('nombreEjercicio').value.trim();
+            const series = document.getElementById('seriesEjercicio').value.trim();
+            const repeticiones = document.getElementById('repeticionesEjercicio').value.trim();
+            const textarea = document.getElementById('textoRutina');
+
+            if (!nombre || !series || !repeticiones) {
+                mostrarNotificacion('Completá ejercicio, series y repeticiones.', 'error');
+                return;
+            }
+
+            const salto = textarea.value.trim() ? '\n' : '';
+            textarea.value += `${salto}${nombre} — ${series} x ${repeticiones}`;
+
+            document.getElementById('nombreEjercicio').value = '';
+            document.getElementById('seriesEjercicio').value = '';
+            document.getElementById('repeticionesEjercicio').value = '';
+            document.getElementById('nombreEjercicio').focus();
+        }
+
+        function cerrarModalRutina() {
+            socioRutinaSeleccionado = null;
+            nombreRutinaSeleccionado = '';
+            document.getElementById('modalRutina').classList.remove('mostrar-modal-rutina');
+        }
+
+        async function guardarRutina() {
+            const textoRutina = document.getElementById('textoRutina').value.trim();
+            const boton = document.getElementById('btnGuardarRutina');
+
+            if (!textoRutina) {
+                mostrarNotificacion('La rutina no puede estar vacía.', 'error');
+                return;
+            }
+
+            boton.disabled = true;
+            boton.textContent = 'Guardando...';
+
+            try {
+                const res = await fetch('/api/rutinas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        socio_id: socioRutinaSeleccionado,
+                        texto_rutina: textoRutina
+                    })
+                });
+
+                if (!res.ok) throw new Error();
+
+                cerrarModalRutina();
+                mostrarNotificacion(`Rutina confirmada para ${nombreRutinaSeleccionado}`);
+            } catch {
+                mostrarNotificacion('Error al guardar la rutina.', 'error');
+            } finally {
+                boton.disabled = false;
+                boton.textContent = 'Confirmar y guardar';
+            }
+        }
+
+        async function guardarRutina() {
+            const textoRutina = document.getElementById('textoRutina').value.trim();
+
+            if (!textoRutina) {
+                mostrarNotificacion('La rutina no puede estar vacía.', 'error');
+                return;
+            }
+
+            const res = await fetch('/api/rutinas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    socio_id: socioRutinaSeleccionado,
+                    texto_rutina: textoRutina
+                })
+            });
+
+            if (res.ok) {
+                cerrarModalRutina();
+                mostrarNotificacion(
+                    `Rutina asignada con éxito a ${nombreRutinaSeleccionado}`
+                );
+            } else {
+                mostrarNotificacion('Error al guardar la rutina.', 'error');
+            }
+        }
+            function actualizarMenuActivo() {
+            const hashActual = window.location.hash || '#resumen';
+
+            document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
+                item.classList.remove('active');
+
+                if (item.getAttribute('href') === hashActual) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        document.querySelectorAll('.sidebar-menu .menu-item[href^="#"]').forEach(item => {
+            item.addEventListener('click', () => {
+                setTimeout(actualizarMenuActivo, 50);
+            });
+        });
+
+        window.addEventListener('hashchange', actualizarMenuActivo);
+
+        actualizarMenuActivo();
+        
+        // ABRIR Y CARGAR LA FICHA DEL SOCIO
+        async function abrirPerfilSocio(socioId) {
+            const modal = document.getElementById('modalPerfil');
+            modal.style.display = 'block';
+
+            // Limpiar campos mientras carga
+            document.getElementById('perfilNombre').innerText = 'Cargando...';
+            document.getElementById('perfilDni').innerText = '...';
+            document.getElementById('perfilWhatsapp').innerText = '...';
+            document.getElementById('perfilVencimiento').innerText = '...';
+            document.getElementById('perfilRutina').innerText = 'Cargando rutina...';
+            document.getElementById('perfilHistorialBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">Cargando pagos...</td></tr>';
+
+            try {
+                // 1. Obtener la lista de socios o buscar los datos del socio actual
+                // (O puedes aprovechar si ya tienes los datos en una variable global, sino hacemos un fetch a la lista)
+                 const resSocios = await fetch(`/api/socios?duenoId=${localStorage.getItem('duenoId')}`);
+                const socios = await resSocios.json();
+                const socio = socios.find(s => s.id == socioId);
+
+                if (socio) {
+                    document.getElementById('perfilNombre').innerText = `${socio.nombre} ${socio.apellido}`;
+                    document.getElementById('perfilDni').innerText = socio.dni;
+                    document.getElementById('perfilWhatsapp').innerText = socio.whatsapp;
+                    document.getElementById('perfilVencimiento').innerText = new Date(socio.fecha_vencimiento).toLocaleDateString('es-AR');
+                }
+
+                // 2. Obtener la rutina actual del socio
+                const resRutina = await fetch(`/api/rutinas/socio/${socioId}`);
+                const dataRutina = await resRutina.json();
+                if (dataRutina.existe && dataRutina.texto_rutina) {
+                    document.getElementById('perfilRutina').innerText = dataRutina.texto_rutina;
+                } else {
+                    document.getElementById('perfilRutina').innerText = 'Este socio todavía no tiene una rutina cargada.';
+                }
+
+                // 3. Obtener el historial de pagos anteriores
+                const resPagos = await fetch(`/api/socios/${socioId}/pagos`);
+                const pagos = await resPagos.json();
+                const tbody = document.getElementById('perfilHistorialBody');
+                tbody.innerHTML = '';
+
+                if (pagos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 8px;">No registra pagos anteriores.</td></tr>';
+                } else {
+                    pagos.forEach(p => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid #ddd';
+                        tr.innerHTML = `
+                            <td style="padding: 6px;">${new Date(p.fecha_pago).toLocaleDateString('es-AR')}</td>
+                            <td style="padding: 6px;">${p.meses} mes(es)</td>
+                            <td style="padding: 6px;">$${p.monto}</td>
+                            <td style="padding: 6px;">${new Date(p.fecha_vencimiento).toLocaleDateString('es-AR')}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error al cargar el perfil del socio:', error);
+                mostrarNotificacion('No se pudo cargar la ficha completa.', 'error');
+            }
+        }
+
+        function cerrarPerfil() {
+                        document.getElementById('modalPerfil').style.display = 'none';
+                    }
+                    // Función para calcular y mostrar los reportes útiles
+            function actualizarReportes(socios) {
+                const hoy = new Date();
+                const mesActual = hoy.getMonth();
+                const anioActual = hoy.getFullYear();
+
+                let ingresosMes = 0;
+                let sociosNuevos = 0;
+                let vencProximos = 0;
+
+                socios.forEach(socio => {
+                    // 1. Vencimientos próximos (0 a 5 días)
+                    const fVenc = new Date(socio.fecha_vencimiento);
+                    fVenc.setHours(0,0,0,0);
+                    const diffDias = Math.ceil((fVenc - hoy) / (1000 * 60 * 60 * 24));
+                    if (diffDias >= 0 && diffDias <= 5) {
+                        vencProximos++;
+                    }
+
+                    // 2. Socios nuevos este mes (asumiendo que tenemos una fecha de alta o tomamos el socio)
+                    // Si tienes una propiedad de fecha de creación, puedes usarla. Aquí un estimado de ejemplo:
+                    sociosNuevos++; // Puedes acotar esto si guardas la fecha de registro real.
+
+                    // 3. Ingresos del mes (simulado sumando cuotas vigentes o pagos registrados)
+                    ingresosMes += Number(socio.monto_cuota || 0);
+                });
+
+                // Pintar en las tarjetas de reporte
+                document.getElementById('reporteIngresos').innerText = `$${ingresosMes.toLocaleString('es-AR')}`;
+                document.getElementById('reporteNuevos').innerText = sociosNuevos;
+                document.getElementById('reporteVencimientos').innerText = vencProximos;
+            }
+
+            // Exportar datos actuales a CSV (Excel compatible)
+            function exportarExcel() {
+                let csvContent = "data:text/csv;charset=utf-8,Nombre,Apellido,DNI,WhatsApp,Vencimiento,Cuota\n";
+                
+                // Aquí recorremos la lista actual de socios cargados
+                // Asegúrate de tener tu array global de socios o pásalo aquí
+                if (typeof sociosGlobal !== 'undefined') {
+                    sociosGlobal.forEach(s => {
+                        csvContent += `"${s.nombre}","${s.apellido}","${s.dni}","${s.whatsapp}","${s.fecha_vencimiento}","${s.monto_cuota}"\n`;
+                    });
+                }
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "reporte_socios_gym.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            // Exportar a PDF usando la función nativa del navegador optimizada para impresión
+           function calcularReportesUtiles(socios) {
+            if (!socios || !Array.isArray(socios)) return;
+
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const mesActual = hoy.getMonth();
+            const anioActual = hoy.getFullYear();
+
+            let ingresosMes = 0;
+            let sociosNuevos = 0;
+            let vencimientosProximos = 0;
+
+            socios.forEach(socio => {
+                // 1. Ingresos del mes
+                ingresosMes += Number(socio.monto_cuota || 0);
+
+                const fechaVenc = new Date(socio.fecha_vencimiento);
+                
+                if (!isNaN(fechaVenc)) {
+                    // 2. Socios nuevos del mes (si su fecha de vencimiento es este mismo mes y año)
+                    if (fechaVenc.getMonth() === mesActual && fechaVenc.getFullYear() === anioActual) {
+                        sociosNuevos++;
+                    }
+
+                    // 3. Vencimientos próximos (en los próximos 5 días)
+                    const diferenciaDias = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+                    if (diferenciaDias >= 0 && diferenciaDias <= 5) {
+                        vencimientosProximos++;
+                    }
+                }
+            });
+
+            // Pintar en las tarjetas de la interfaz
+            const elemIngresos = document.getElementById('reporteIngresosMes');
+            const elemNuevos = document.getElementById('reporteSociosNuevos');
+            const elemVencimientos = document.getElementById('reporteVencimientosProximos');
+
+            if (elemIngresos) elemIngresos.innerText = `$${ingresosMes.toLocaleString('es-AR')}`;
+            if (elemNuevos) elemNuevos.innerText = sociosNuevos;
+            if (elemVencimientos) elemVencimientos.innerText = vencimientosProximos;
+        }
+                // Función para exportar el listado actual a Excel (CSV)
+                function exportarExcel() {
+                if (!listaSociosMemoria || listaSociosMemoria.length === 0) {
+                    if (typeof mostrarNotificacion === 'function') {
+                        mostrarNotificacion('No hay socios para exportar', 'error');
+                    } else {
+                        alert('No hay socios para exportar');
+                    }
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,Nombre;Apellido;DNI;WhatsApp;Vencimiento;Cuota\n";
+                
+                listaSociosMemoria.forEach(s => {
+                    // Limpiamos la fecha para mostrar solo YYYY-MM-DD
+                    let fechaLimpiada = s.fecha_vencimiento ? s.fecha_vencimiento.split('T')[0] : '';
+                    
+                    // Forzamos al WhatsApp a ir con un apóstrofe (') para que Excel lo lea como texto y no lo rompa
+                    let whatsappTexto = s.whatsapp ? `\t${s.whatsapp}` : '';
+
+                    csvContent += `"${s.nombre || ''}";"${s.apellido || ''}";"${s.dni || ''}";"${whatsappTexto}";"${fechaLimpiada}";"${s.monto_cuota || ''}"\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "reporte_socios_gym.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion('Reporte exportado a Excel con éxito');
+                }
+            }
+
+                // Función para exportar a PDF (usando la ventana de impresión nativa)
+                function exportarPDF() {
+                    window.print();
+                }
+    </script>
+  <!-- MODAL DE PERFIL DE SOCIO -->
+    <div id="modalPerfil" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #18181b; color: #f4f4f5; margin: auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 1px solid #27272a;">
+            
+            <!-- Cabecera del Modal -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #27272a; padding-bottom: 12px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #00ff88; font-size: 18px; font-weight: 600;">Ficha del Socio 📄</h2>
+                <span onclick="cerrarPerfil()" style="background: #27272a; border: none; font-size: 18px; cursor: pointer; color: #a1a1aa; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='#3f3f46'" onmouseout="this.style.background='#27272a'">&times;</span>
+            </div>
+
+            <!-- Datos Personales y Estado -->
+            <div id="perfilDatosGenerales" style="background: #202024; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #2a2a35; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <p style="margin: 0; color: #a1a1aa;"><strong>Nombre:</strong> <span id="perfilNombre" style="color: #fff;">-</span></p>
+                <p style="margin: 0; color: #a1a1aa;"><strong>DNI:</strong> <span id="perfilDni" style="color: #fff;">-</span></p>
+                <p style="margin: 0; color: #a1a1aa;"><strong>WhatsApp:</strong> <span id="perfilWhatsapp" style="color: #fff;">-</span></p>
+                <p style="margin: 0; color: #a1a1aa;"><strong>Vencimiento:</strong> <span id="perfilVencimiento" style="color: #fff;">-</span></p>
+            </div>
+
+            <!-- Rutina Actual -->
+            <div style="background: #202024; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #2a2a35;">
+                <h4 style="margin: 0 0 10px 0; color: #00ff88; font-size: 14px; letter-spacing: 0.5px;">🏋️‍♂️ RUTINA ACTUAL</h4>
+                <pre id="perfilRutina" style="white-space: pre-wrap; font-family: inherit; font-size: 13px; color: #d4d4d8; margin: 0; background: #121214; padding: 10px; border-radius: 6px; border: 1px solid #27272a;">Cargando rutina...</pre>
+            </div>
+
+            <!-- Historial de Pagos Anteriores -->
+            <div>
+                <h4 style="margin: 0 0 10px 0; color: #a1a1aa; font-size: 14px; letter-spacing: 0.5px;">💰 HISTORIAL DE PAGOS ANTERIORES</h4>
+                <div style="max-height: 180px; overflow-y: auto; border: 1px solid #27272a; border-radius: 8px; background: #121214;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;" id="tablaHistorialPagos">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #27272a; background: #202024; color: #00ff88;">
+                                <th style="padding: 10px; text-align: left;">Monto</th>
+                                <th style="padding: 10px; text-align: left;">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody style="color: #fff;">
+                            <!-- Se carga dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

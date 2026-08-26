@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - GymControl</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .login-container { display: flex; justify-content: center; align-items: center; height: 80vh; }
+        .login-card { width: 100%; max-width: 400px; }
+        .logo-header { text-align: center; margin-bottom: 25px; }
+        .logo-header h1 { font-size: 2.5rem; }
+    </style>
+</head>
+<body class="auth-page">
+    <div class="auth-layout">
+
+        <section class="auth-brand-panel">
+            <div class="auth-brand">
+                <span class="auth-brand-icon">✦</span>
+                <div>
+                    <strong>Mi Gym</strong>
+                    <small>GYM MANAGER</small>
+                </div>
+            </div>
+
+            <div class="auth-copy">
+                <span>GESTIONÁ TU GIMNASIO</span>
+                <h1>Todo tu gimnasio,<br>en un solo lugar.</h1>
+                <p>
+                    Socios, planes, pagos y rutinas organizados
+                    desde un panel simple y profesional.
+                </p>
+            </div>
+
+            <div class="auth-benefits">
+                <p>✓ Gestión de socios</p>
+                <p>✓ Control de vencimientos</p>
+                <p>✓ Rutinas digitales</p>
+            </div>
+        </section>
+
+        <main class="login-container">
+            <div class="card login-card auth-card">
+                <div class="logo-header">
+                    <span class="auth-mobile-logo">✦</span>
+                    <h1>Bienvenido</h1>
+                    <p>Ingresá a tu panel de administración</p>
+                </div>
+
+                <form id="formLogin">
+                    <div class="form-group">
+                        <label>Correo electrónico</label>
+                        <input type="email" id="email" required placeholder="ejemplo@gym.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="password" required placeholder="••••••••">
+                    </div>
+
+                    <button type="submit" class="auth-submit">
+                        Ingresar al panel
+                    </button>
+                </form>
+
+                <a href="index.html" class="link-login">
+                    ¿No tenés cuenta? Registrá tu gimnasio
+                </a>
+            </div>
+        </main>
+
+    </div>
+    <script>
+    document.getElementById('formLogin').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            localStorage.setItem('duenoId', data.duenoId);
+            localStorage.setItem('nombreGym', data.nombreGym);
+            localStorage.setItem('diasRestantes', data.diasRestantes);
+
+            window.location.href = '/panel.html';
+        } else {
+            alert(data.error);
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Súper Admin - Mi Gym</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { 
+            padding: 40px 20px; 
+            background-color: #f4f7f6; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #333;
+            margin: 0;
+        }
+        .admin-card { 
+            background-color: #ffffff; 
+            max-width: 1100px; 
+            margin: 0 auto; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        h1 { 
+            color: #2c3e50; 
+            margin-bottom: 5px; 
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .subtitle { 
+            color: #718096; 
+            margin-bottom: 25px; 
+            font-size: 14px; 
+        }
+        
+        /* Métricas */
+        .admin-metricas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .admin-metrica {
+            background: #f8fafc;
+            padding: 18px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .admin-metrica span {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .admin-metrica strong {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Buscador */
+        .admin-toolbar {
+            margin-bottom: 20px;
+        }
+        input[type="text"] { 
+            padding: 10px 14px; 
+            width: 100%; 
+            max-width: 350px; 
+            border-radius: 6px; 
+            border: 1px solid #cbd5e1; 
+            background: #fff; 
+            color: #333; 
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: #3b82f6;
+        }
+
+        /* Tabla */
+        .tabla-contenedor {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            text-align: left;
+        }
+        th, td { 
+            padding: 14px 16px; 
+            border-bottom: 1px solid #edf2f7; 
+            color: #2d3748; 
+            font-size: 14px;
+        }
+        th { 
+            background-color: #f8fafc; 
+            color: #475569; 
+            font-weight: 600; 
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+        
+        /* Badges */
+        .badge-admin { 
+            padding: 5px 10px; 
+            border-radius: 6px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            display: inline-block; 
+            letter-spacing: 0.5px;
+        }
+        .activo { background-color: #def7ec; color: #03543f; border: 1px solid #bcf0da; }
+        .suspendido { background-color: #fde8e8; color: #9b1c1c; border: 1px solid #f8b4b4; }
+
+        /* Botones de acción */
+        .btn-historial { background-color: #3b82f6; color: white; padding: 7px 12px; font-size: 12px; margin-right: 4px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        .btn-add-time { background-color: #10b981; color: white; padding: 7px 12px; font-size: 12px; margin-right: 4px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        .btn-block-gym { background-color: #ef4444; color: white; padding: 7px 12px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        
+        .btn-historial:hover { background-color: #2563eb; }
+        .btn-add-time:hover { background-color: #059669; }
+        .btn-block-gym:hover { background-color: #dc2626; }
+
+        .admin-estado {
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #d97706;
+        }
+
+        /* Notificaciones Toast */
+        .toast {
+            visibility: hidden;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #1e293b;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(20px);
+        }
+        .toast.mostrar {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.exito { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #ef4444; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-card">
+        <h1>Panel de Control de Licencias 👑</h1>
+        <p class="subtitle">Administración exclusiva de Ayrton - Gestión de Pagos de Clientes</p>
+        
+        <div class="admin-metricas">
+            <div class="admin-metrica">
+                <span>Gimnasios activos</span>
+                <strong id="adminActivos" style="color: #059669;">0</strong>
+            </div>
+            <div class="admin-metrica">
+                <span>Gimnasios suspendidos</span>
+                <strong id="adminSuspendidos" style="color: #dc2626;">0</strong>
+            </div>
+            <div class="admin-metrica">
+                <span>Total de gimnasios</span>
+                <strong id="adminTotal" style="color: #2563eb;">0</strong>
+            </div>
+        </div>
+
+        <div class="admin-toolbar">
+            <input type="text" id="buscadorGym" placeholder="🔍 Buscar gimnasio o correo..." oninput="filtrarGimnasios()">
+        </div>
+        <p id="estadoAdmin" class="admin-estado" role="status" aria-live="polite"></p>
+        
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Gimnasio</th>
+                        <th>Email del Dueño</th>
+                        <th>Teléfono</th>
+                        <th>Vencimiento / Estado</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDuenos">
+                    <!-- Se carga dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL DE LICENCIA (Confirmación) -->
+    <div id="modalLicencia" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: #ffffff; color: #2d3748; padding: 25px; border-radius: 12px; width: 400px; max-width: 90%; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+            <h3 id="modalLicenciaTitulo" style="margin-top: 0; color: #2c3e50; font-size: 18px;">Actualizar licencia</h3>
+            <p id="modalLicenciaTexto" style="color: #4a5568; font-size: 14px; line-height: 1.5;"></p>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="cerrarModalLicencia()" style="background: #e2e8f0; color: #4a5568; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">Cancelar</button>
+                <button type="button" id="btnConfirmarLicencia" onclick="confirmarLicencia()" style="background: #10b981; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE HISTORIAL, PAGOS Y NOTAS -->
+    <div id="modalHistorial" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: #ffffff; color: #2d3748; padding: 25px; border-radius: 12px; width: 650px; max-width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+            
+            <!-- Cabecera del Modal -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px;">
+                <h3 id="modalGymNombre" style="margin: 0; color: #2c3e50; font-size: 18px; font-weight: 600;">Gestión de Gimnasio</h3>
+                <button onclick="cerrarModalHistorial()" style="background: #edf2f7; border: none; font-size: 18px; cursor: pointer; color: #4a5568; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#edf2f7'">&times;</button>
+            </div>
+
+            <!-- Formulario para agregar notas o registrar pagos -->
+            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #2c3e50; letter-spacing: 0.5px;">REGISTRAR EVENTO / NOTA</h4>
+                <div style="margin-bottom: 12px;">
+                    <select id="tipoEventoInput" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; background: #fff; color: #333; font-size: 14px; outline: none;">
+                        <option value="PAGO">💳 Pago de Cuota / Extensión</option>
+                        <option value="NOTA">📝 Nota Interna</option>
+                        <option value="BLOQUEO">🔒 Bloqueo Manual</option>
+                        <option value="REACTIVACION">🔓 Reactivación Manual</option>
+                    </select>
+                </div>
+                <textarea id="detallesEventoInput" placeholder="Escribe los detalles, monto cobrado o notas sobre el gimnasio..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; height: 75px; resize: none; box-sizing: border-box; margin-bottom: 12px; background: #fff; color: #333; font-size: 14px; outline: none;"></textarea>
+                <button onclick="guardarEventoHistorial()" style="background: #10b981; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">Guardar en Historial</button>
+            </div>
+
+            <!-- Listado de Historial -->
+            <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #718096; letter-spacing: 0.5px;">HISTORIAL DE ACTIVIDAD</h4>
+            <div id="listaHistorialContenedor" style="border: 1px solid #e2e8f0; border-radius: 8px; max-height: 220px; overflow-y: auto; padding: 12px; background: #f8fafc;">
+                <p style="text-align: center; color: #a0aec0; font-size: 13px;">Cargando historial...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificacion" class="toast" role="status">
+        <span id="notificacionIcono">✓</span>
+        <span id="notificacionTexto"></span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', obtenerGimnasios);
+
+        let gimnasiosMemoria = [];
+        let licenciaPendiente = null;
+        let temporizadorNotificacion;
+        let duenoIdSeleccionado = null;
+
+        function mostrarNotificacion(mensaje, tipo = 'exito') {
+            const notificacion = document.getElementById('notificacion');
+            const texto = document.getElementById('notificacionTexto');
+            const icono = document.getElementById('notificacionIcono');
+
+            texto.innerText = mensaje;
+            notificacion.className = `toast mostrar ${tipo}`;
+            icono.innerText = tipo === 'error' ? '!' : '✓';
+
+            clearTimeout(temporizadorNotificacion);
+            temporizadorNotificacion = setTimeout(() => {
+                notificacion.classList.remove('mostrar');
+            }, 3500);
+        }
+
+        async function obtenerGimnasios() {
+            const estado = document.getElementById('estadoAdmin');
+            estado.textContent = 'Cargando gimnasios...';
+
+            try {
+                const res = await fetch('/api/admin/duenos');
+                if (!res.ok) throw new Error('No se pudo cargar la información.');
+
+                gimnasiosMemoria = await res.json();
+                actualizarMetricasAdmin();
+                renderizarGimnasios(gimnasiosMemoria);
+                estado.textContent = '';
+            } catch (error) {
+                gimnasiosMemoria = [];
+                actualizarMetricasAdmin();
+                renderizarGimnasios([]);
+                estado.textContent = 'No se pudo cargar la información. Revisá la conexión.';
+            }
+        }
+
+        function actualizarMetricasAdmin() {
+            const activos = gimnasiosMemoria.filter(g => g.dias_restantes >= 0).length;
+            const suspendidos = gimnasiosMemoria.length - activos;
+
+            document.getElementById('adminActivos').innerText = activos;
+            document.getElementById('adminSuspendidos').innerText = suspendidos;
+            document.getElementById('adminTotal').innerText = gimnasiosMemoria.length;
+        }
+
+        function filtrarGimnasios() {
+            const texto = document.getElementById('buscadorGym').value.trim().toLowerCase();
+            const filtrados = gimnasiosMemoria.filter(g =>
+                g.nombre_gym.toLowerCase().includes(texto) ||
+                g.email.toLowerCase().includes(texto)
+            );
+            renderizarGimnasios(filtrados);
+        }
+
+       function renderizarGimnasios(duenos) {
+            const tabla = document.getElementById('tablaDuenos');
+            tabla.innerHTML = '';
+
+            if (duenos.length === 0) {
+                tabla.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #a0aec0; padding: 30px;">No se encontraron gimnasios.</td></tr>';
+                return;
+            }
+
+            duenos.forEach(dueno => {
+                // Una cuenta es pendiente si su estado es 'pendiente' o si no tiene fecha de vencimiento válida
+                const esPendiente = dueno.estado === 'pendiente' || !dueno.fecha_vencimiento_app || dueno.fecha_vencimiento_app.startsWith('1899');
+                const suspendido = !esPendiente && dueno.dias_restantes < 0;
+                
+                let estadoTexto = 'Activo';
+                let estadoClase = 'activo';
+                
+                if (esPendiente) {
+                    estadoTexto = 'Pendiente';
+                    estadoClase = 'suspendido'; // O mantén el estilo que prefieras
+                } else if (suspendido) {
+                    estadoTexto = 'Suspendido';
+                    estadoClase = 'suspendido';
+                }
+
+                const fechaFormateada = (!esPendiente && dueno.fecha_vencimiento_app) 
+                    ? new Date(dueno.fecha_vencimiento_app).toLocaleDateString('es-AR', { timeZone: 'UTC' }) 
+                    : 'Sin activar';
+
+                const tr = document.createElement('tr');
+
+                tr.innerHTML = `
+                    <td><strong style="color: #2d3748;">${dueno.nombre_gym}</strong></td>
+                    <td style="color: #718096;">${dueno.email}</td>
+                    <td style="color: #718096;">${dueno.telefono || 'No registrado'}</td>
+                    <td>
+                        ${fechaFormateada}
+                        ${!esPendiente ? `<small style="display: block; color: #a0aec0; font-size: 11px; margin-top: 2px;">(${dueno.dias_restantes} días restantes)</small>` : ''}
+                    </td>
+                    <td>
+                        <span class="badge-admin ${estadoClase}">${estadoTexto}</span>
+                    </td>
+                    <td>
+                        ${esPendiente ? `
+                            <button onclick="aprobarCuenta(${dueno.id})" style="background-color: #10b981; color: white; padding: 7px 12px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Aprobar Cuenta</button>
+                        ` : `
+                            <button class="btn-historial" onclick="abrirHistorial(${dueno.id}, '${dueno.nombre_gym.replace(/'/g, "\\'")}')">Historial</button>
+                            <button class="btn-add-time" onclick="modificarLicencia(${dueno.id}, 'activar')">+30 días</button>
+                            <button class="btn-block-gym" onclick="modificarLicencia(${dueno.id}, 'bloquear')">Bloquear</button>
+                        `}
+                    </td>
+                `;
+
+                tabla.appendChild(tr);
+            });
+        }
+
+        async function aprobarCuenta(id) {
+            try {
+                const res = await fetch(`/api/admin/duenos/${id}/aprobar`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!res.ok) throw new Error();
+
+                await obtenerGimnasios();
+                mostrarNotificacion('¡Cuenta aprobada y activada con éxito!');
+            } catch (error) {
+                mostrarNotificacion('No se pudo aprobar la cuenta.', 'error');
+            }
+        }
+
+        function modificarLicencia(id, accion) {
+            licenciaPendiente = { id, accion };
+            const esPago = accion === 'activar';
+
+            document.getElementById('modalLicenciaTitulo').textContent = esPago ? 'Registrar pago de licencia' : 'Bloquear acceso al gimnasio';
+            document.getElementById('modalLicenciaTexto').textContent = esPago ? 'Se sumarán 30 días a la licencia del gimnasio. ¿Querés continuar?' : 'El gimnasio no podrá ingresar al panel. ¿Querés continuar?';
+            document.getElementById('btnConfirmarLicencia').textContent = esPago ? 'Sí, sumar 30 días' : 'Sí, bloquear acceso';
+            document.getElementById('modalLicencia').style.display = 'flex';
+        }
+
+        function cerrarModalLicencia() {
+            licenciaPendiente = null;
+            document.getElementById('modalLicencia').style.display = 'none';
+        }
+
+        async function confirmarLicencia() {
+            if (!licenciaPendiente) return;
+            const { id, accion } = licenciaPendiente;
+
+            try {
+                const res = await fetch(`/api/admin/duenos/${id}/licencia`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accion })
+                });
+
+                if (!res.ok) throw new Error();
+
+                cerrarModalLicencia();
+                await obtenerGimnasios();
+                mostrarNotificacion('Licencia actualizada correctamente');
+            } catch (error) {
+                mostrarNotificacion('No se pudo actualizar la licencia.', 'error');
+            }
+        }
+
+        function abrirHistorial(duenoId, nombreGym) {
+            duenoIdSeleccionado = duenoId;
+            document.getElementById('modalGymNombre').innerText = `Gestión: ${nombreGym}`;
+            document.getElementById('modalHistorial').style.display = 'flex';
+            document.getElementById('detallesEventoInput').value = '';
+            cargarHistorial(duenoId);
+        }
+
+        function cerrarModalHistorial() {
+            document.getElementById('modalHistorial').style.display = 'none';
+        }
+
+        async function cargarHistorial(duenoId) {
+            const contenedor = document.getElementById('listaHistorialContenedor');
+            contenedor.innerHTML = '<p style="text-align: center; color: #a0aec0; font-size: 13px; padding: 20px;">Cargando historial...</p>';
+
+            try {
+                const res = await fetch(`/api/admin/historial/${duenoId}`);
+                if (!res.ok) throw new Error('Error al conectar con el servidor');
+                
+                const historial = await res.json();
+
+                if (!Array.isArray(historial) || historial.length === 0) {
+                    contenedor.innerHTML = '<p style="text-align: center; color: #a0aec0; font-size: 13px; padding: 20px;">No hay registros en el historial aún.</p>';
+                    return;
+                }
+
+                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
+                historial.forEach(item => {
+                    let colorBadge = '#718096';
+                    let bgBadge = '#edf2f7';
+                    if (item.tipo_evento === 'PAGO') { colorBadge = '#03543f'; bgBadge = '#def7ec'; }
+                    if (item.tipo_evento === 'BLOQUEO') { colorBadge = '#9b1c1c'; bgBadge = '#fde8e8'; }
+                    if (item.tipo_evento === 'REACTIVACION') { colorBadge = '#1e40af'; bgBadge = '#dbeafe'; }
+                    if (item.tipo_evento === 'NOTA') { colorBadge = '#92400e'; bgBadge = '#fef3c7'; }
+
+                    const fechaFormateada = new Date(item.fecha_evento).toLocaleString('es-AR');
+
+                    html += `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px; width: 130px;"><span style="background: ${bgBadge}; color: ${colorBadge}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">${item.tipo_evento}</span></td>
+                            <td style="padding: 10px; color: #2d3748;">${item.detalles || 'Sin detalles'}</td>
+                            <td style="padding: 10px; color: #718096; font-size: 11px; text-align: right; width: 130px;">${fechaFormateada}</td>
+                        </tr>
+                    `;
+                });
+                html += '</table>';
+                contenedor.innerHTML = html;
+            } catch (error) {
+                contenedor.innerHTML = '<p style="text-align: center; color: #ef4444; font-size: 13px; padding: 20px;">Error al cargar el historial.</p>';
+                mostrarNotificacion('No se pudo cargar el historial', 'error');
+            }
+        }
+
+        async function guardarEventoHistorial() {
+            const tipo_evento = document.getElementById('tipoEventoInput').value;
+            const detalles = document.getElementById('detallesEventoInput').value.trim();
+
+            if (!detalles) {
+                mostrarNotificacion('Por favor, escribe una descripción o detalle.', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/historial', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        dueno_id: duenoIdSeleccionado,
+                        tipo_evento,
+                        detalles
+                    })
+                });
+
+                if (res.ok) {
+                    document.getElementById('detallesEventoInput').value = '';
+                    cargarHistorial(duenoIdSeleccionado);
+                    mostrarNotificacion('Evento guardado con éxito');
+                } else {
+                    mostrarNotificacion('Error al guardar el evento.', 'error');
+                }
+            } catch (error) {
+                mostrarNotificacion('Error de conexión con el servidor.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
