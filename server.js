@@ -54,7 +54,18 @@ app.get('/health', async (_req, res) => {
     }
 });
 
-
+// Ruta para recibir la contraseña del login
+app.post('/api/login', express.urlencoded({ extended: true }), (req, res) => {
+    const { password } = req.body;
+    
+    // Cambia 'TuPassword123' por la contraseña que quieras usar
+    if (password === 'Byakko2026#') {
+        req.session.isAdmin = true;
+        return res.redirect('/admin.html');
+    } else {
+        return res.send("<script>alert('Contraseña incorrecta'); window.location.href='/login.html';</script>");
+    }
+});
 
 // 1. LOGIN DE DUEÑOS (CON CONTROL DE BLOQUEO
     // 1. LOGIN DE DUEÑOS SEGURO (CON CONTROL DE BLOQUEO)
