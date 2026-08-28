@@ -3,15 +3,17 @@ const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 require('dotenv').config({ quiet: true });
 
+const app = express(); // 1. Primero se declara la app
 
-const session = require('express-session');
-
-// Configuración de sesiones
-app.use(session({
+const session = require('express-session'); // 2. Luego se importa la sesión
+app.use(session({                           // 3. Y luego se usa app.use(session(...))
     secret: 'Byakko2026#',
     resave: false,
     saveUninitialized: false
 }));
+
+app.use(express.json());
+app.use(express.static(__dirname));
 
 // Middleware para proteger el panel
 function verificarAdmin(req, res, next) {
@@ -20,7 +22,7 @@ function verificarAdmin(req, res, next) {
     }
     res.redirect('/login.html');
 }
-const app = express(); 
+
 app.use(express.json());
 
 // 1. Permite que Express lea tus archivos HTML y CSS de la carpeta
