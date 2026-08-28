@@ -1,5 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
+const bcrypt = require('bcrypt');
+require('dotenv').config({ quiet: true });
 
 const app = express(); 
 app.use(express.json());
@@ -10,21 +12,27 @@ app.use(express.static(__dirname));
 // 2. Ruta principal que abre tu página de login (o index) al entrar a la web
 app.get('/', (req, res) => {  res.sendFile(__dirname + '/index.html');});
 
-// Si existe la variable DATABASE_URL...
-const db = mysql.createConnection({
-    host: 'kodama.proxy.rlwy.net',
-    port: 25355,
-    user: 'root',
-    password: 'KHLihiztroalPWRSKjtwqXQPFhxvtdDx',
-    database: 'railway'
-});
+const databaseUrl = process.env.DATABASE_URL || process.env.MYSQL_URL;
+const db = databaseUrl
+    ? mysql.createPool(databaseUrl)
+    : mysql.createPool({
+        host: process.env.DB_HOST || process.env.MYSQLHOST,
+        port: Number(process.env.DB_PORT || process.env.MYSQLPORT || 3306),
+        user: process.env.DB_USER || process.env.MYSQLUSER,
+        password: process.env.DB_PASS || process.env.MYSQLPASSWORD,
+        database: process.env.DB_NAME || process.env.MYSQLDATABASE,
+        waitForConnections: true,
+        connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
+        queueLimit: 0
+    });
 
-db.connect((err) => {
-    if (err) {
-        console.error('Error al conectar a la base de datos:', err);
-        return;
+app.get('/health', async (_req, res) => {
+    try {
+        await db.promise().query('SELECT 1');
+        res.status(200).json({ status: 'ok' });
+    } catch (_error) {
+        res.status(503).json({ status: 'database_unavailable' });
     }
-    console.log('¡Conectado exitosamente a la base de datos!');
 });
 
 
@@ -81,9 +89,6 @@ db.connect((err) => {
     });
 
 // REGISTRO DE DUEÑOS
-// 1. Importa bcrypt al inicio de tu server.js si no lo tienes:
-const bcrypt = require('bcrypt');
-
 // REGISTRO DE DUEÑOS SEGURO (Con teléfono y estado pendiente)
 app.post('/api/registro-dueno', async (req, res) => {
     const { email, password, nombre_gym, telefono } = req.body;
@@ -234,7 +239,7 @@ app.delete('/api/socios/:id', (req, res) => {
 });
 
 // 8. RENOVAR PAGO Y GUARDAR COMPROBANTE EN EL HISTORIAL
-app.put('/api/socios/:id/pagar', (req, res) => {
+app.put('/api/socios/:id/pagar', async (req, res) => {
     const { id } = req.params;
     const meses = Number.parseInt(req.body.meses, 10) || 1;
 
@@ -242,63 +247,58 @@ app.put('/api/socios/:id/pagar', (req, res) => {
         return res.status(400).json({ error: 'Cantidad de meses inválida.' });
     }
 
-    db.beginTransaction((transactionError) => {
-        if (transactionError) return res.status(500).json({ error: transactionError.message });
-
-        const cancelar = (error) => db.rollback(() => res.status(500).json({ error: error.message }));
+    let connection;
+    try {
+        connection = await db.promise().getConnection();
+        await connection.beginTransaction();
         const buscarSocio = `
-            SELECT s.id, s.nombre, s.apellido, s.whatsapp, s.dueno_id, p.precio
+            SELECT s.id, s.nombre, s.apellido, s.whatsapp, s.dueno_id, s.fecha_vencimiento, p.precio
             FROM socios s
             JOIN planes p ON p.id = s.plan_id
             WHERE s.id = ?
         `;
+        const [results] = await connection.query(buscarSocio, [id]);
+        if (results.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Socio o plan no encontrado.' });
+        }
 
-        db.query(buscarSocio, [id], (err, results) => {
-            if (err) return cancelar(err);
-            if (results.length === 0) {
-                return db.rollback(() => res.status(404).json({ error: 'Socio o plan no encontrado.' }));
+        const socio = results[0];
+        const monto = Number(socio.precio) * meses;
+        const dias = meses * 30;
+        await connection.query(
+            `UPDATE socios
+             SET fecha_vencimiento = DATE_ADD(GREATEST(fecha_vencimiento, CURDATE()), INTERVAL ? DAY), monto_cuota = ?
+             WHERE id = ?`,
+            [dias, monto, id]
+        );
+        const [vencimiento] = await connection.query('SELECT fecha_vencimiento FROM socios WHERE id = ?', [id]);
+        const fechaVencimiento = vencimiento[0].fecha_vencimiento;
+        const [result] = await connection.query(
+            `INSERT INTO pagos (socio_id, dueno_id, monto, meses, fecha_vencimiento)
+             VALUES (?, ?, ?, ?, ?)`,
+            [id, socio.dueno_id, monto, meses, fechaVencimiento]
+        );
+        await connection.commit();
+        res.json({
+            mensaje: 'Pago registrado con éxito',
+            comprobante: {
+                id: result.insertId,
+                nombre: `${socio.nombre} ${socio.apellido}`,
+                whatsapp: socio.whatsapp,
+                monto,
+                meses,
+                fecha_pago: new Date(),
+                fecha_vencimiento: fechaVencimiento
             }
-
-            const socio = results[0];
-            const monto = Number(socio.precio) * meses;
-            const dias = meses * 30;
-
-            db.query(
-                `UPDATE socios
-                 SET fecha_vencimiento = DATE_ADD(CURDATE(), INTERVAL ? DAY), monto_cuota = ?
-                 WHERE id = ?`,
-                [dias, monto, id],
-                (updateError) => {
-                    if (updateError) return cancelar(updateError);
-
-                    db.query(
-                        `INSERT INTO pagos (socio_id, dueno_id, monto, meses, fecha_vencimiento)
-                         VALUES (?, ?, ?, ?, DATE_ADD(CURDATE(), INTERVAL ? DAY))`,
-                        [id, socio.dueno_id, monto, meses, dias],
-                        (insertError, result) => {
-                            if (insertError) return cancelar(insertError);
-
-                            db.commit((commitError) => {
-                                if (commitError) return cancelar(commitError);
-                                res.json({
-                                    mensaje: 'Pago registrado con éxito',
-                                    comprobante: {
-                                        id: result.insertId,
-                                        nombre: `${socio.nombre} ${socio.apellido}`,
-                                        whatsapp: socio.whatsapp,
-                                        monto,
-                                        meses,
-                                        fecha_pago: new Date(),
-                                        fecha_vencimiento: new Date(Date.now() + dias * 86400000)
-                                    }
-                                });
-                            });
-                        }
-                    );
-                }
-            );
         });
-    });
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error('Error al registrar el pago:', error);
+        res.status(500).json({ error: 'No se pudo registrar el pago.' });
+    } finally {
+        if (connection) connection.release();
+    }
 });
 
 app.get('/api/socios/:id/pagos', (req, res) => {
@@ -347,6 +347,8 @@ app.put('/api/admin/duenos/:id/licencia', (req, res) => {
         query = "UPDATE duenos SET fecha_vencimiento_app = DATE_ADD(GREATEST(fecha_vencimiento_app, CURDATE()), INTERVAL 30 DAY) WHERE id = ?";
     } else if (accion === 'bloquear') {
         query = "UPDATE duenos SET fecha_vencimiento_app = DATE_SUB(CURDATE(), INTERVAL 1 DAY) WHERE id = ?";
+    } else {
+        return res.status(400).json({ error: 'Acción de licencia inválida.' });
     }
     db.query(query, [id], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -455,34 +457,18 @@ app.get('/api/admin/historial/:dueno_id', (req, res) => {
     });
 });
 
-// Obtener historial de un dueño/gimnasio
-app.get('/api/admin/historial/:id', async (req, res) => {
-    const duenoId = req.params.id;
-    try {
-        // Asegúrate de cambiar 'historial_admin' por el nombre real de tu tabla en la base de datos
-        const [rows] = await pool.query('SELECT * FROM historial_gimnasios WHERE dueno_id = ? ORDER BY fecha_evento DESC', [duenoId]);
-        res.json(rows);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al obtener el historial' });
-    }
-});
-
-// Guardar un evento o nota en el historial
-app.post('/api/admin/historial', async (req, res) => {
-    const { dueno_id, tipo_evento, detalles } = req.body;
-    try {
-        await pool.query(
-    'INSERT INTO historial_gimnasios (dueno_id, tipo_evento, detalles, fecha_evento) VALUES (?, ?, ?, NOW())',
-    [dueno_id, tipo_evento, detalles]
-);
-        res.json({ success: true, mensaje: 'Evento guardado correctamente' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al guardar el evento' });
-    }
-});
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
+
+async function startServer() {
+    try {
+        const connection = await db.promise().getConnection();
+        connection.release();
+        app.listen(PORT, () => console.log(`Servidor escuchando en el puerto ${PORT}`));
+    } catch (error) {
+        console.error('No se pudo iniciar: la conexión a MySQL fue rechazada.', error.message);
+        process.exit(1);
+    }
+}
+
+startServer();
 
