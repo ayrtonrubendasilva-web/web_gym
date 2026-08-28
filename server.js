@@ -90,6 +90,7 @@ app.get('/health', async (_req, res) => {
 
 // REGISTRO DE DUEÑOS
 // REGISTRO DE DUEÑOS SEGURO (Con teléfono y estado pendiente)
+// REGISTRO DE DUEÑOS
 app.post('/api/registro-dueno', async (req, res) => {
     const { email, password, nombre_gym, telefono } = req.body;
 
@@ -98,12 +99,16 @@ app.post('/api/registro-dueno', async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Guardamos con estado 'pendiente' y el teléfono recibido
-        const query = `INSERT INTO duenos (email, password, nombre_gym, telefono, estado, fecha_vencimiento_app) VALUES (?, ?, ?, ?, 'pendiente', NULL)`;
+        // Calculamos la fecha de vencimiento a 15 días para la prueba
+        const fechaVencimiento = new Date();
+        fechaVencimiento.setDate(fechaVencimiento.getDate() + 15);
 
-        db.query(query, [email, hashedPassword, nombre_gym, telefono], (err, result) => {
+        // Incluimos la fecha de vencimiento en el INSERT para que no falle
+        const query = `INSERT INTO duenos (email, password, nombre_gym, telefono, estado, fecha_vencimiento_app) VALUES (?, ?, ?, ?, 'pendiente', ?)`;
+
+        db.query(query, [email, hashedPassword, nombre_gym, telefono, fechaVencimiento], (err, result) => {
             if (err) {
-                if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'El correo ya está registrado' });
+                if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'El correo ya está registrado.' });
                 return res.status(500).json({ error: err.message });
             }
             res.json({ mensaje: 'Gimnasio registrado con éxito. Pendiente de aprobación.', id: result.insertId });
@@ -112,7 +117,6 @@ app.post('/api/registro-dueno', async (req, res) => {
         res.status(500).json({ error: 'Error al procesar la seguridad' });
     }
 });
-
 
 // 2. REPORTES BÁSICOS
 app.get('/api/reportes', (req, res) => {
