@@ -501,7 +501,7 @@ app.post('/api/admin/historial', (req, res) => {
     });
 
     app.get('/admin.html', verificarAdmin, (req, res) => {
-        res.sendFile(__dirname + '/admin.html');
+        res.sendFile(__dirname + '/panel-secreto.html');
     });
 
     app.get('/logout', (req, res) => {
