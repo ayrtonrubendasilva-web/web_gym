@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso Super Admin</title>
+    <style>
+        body { background: #0f172a; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #1e293b; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        input { padding: 10px; margin: 10px 0; width: 80%; border-radius: 5px; border: 1px solid #475569; background: #0f172a; color: #fff; }
+        button { padding: 10px 20px; background: #22c55e; border: none; color: #fff; font-weight: bold; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🔒 Zona Restringida</h2>
+        <p>Ingrese la contraseña de Super Admin</p>
+        <form action="/login-admin" method="POST">
+            <input type="password" name="password" required placeholder="Contraseña...">
+            <br>
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+</body>
+</html>

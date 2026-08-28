@@ -20,7 +20,7 @@ function verificarAdmin(req, res, next) {
     if (req.session && req.session.isAdmin) {
         return next();
     }
-    res.redirect('/login.html');
+    res.redirect('/auth-admin.html');
 }
 
 app.use(express.json());
@@ -499,17 +499,15 @@ app.post('/api/admin/historial', (req, res) => {
         res.redirect('/login.html');
     }
 
-    app.post('/login', express.urlencoded({ extended: true }), (req, res) => {
-        const { password } = req.body;
-        const PASSWORD_ADMIN = "tu_contraseña_secreta"; // Cámbiala por la que quieras
-
-        if (password === PASSWORD_ADMIN) {
-            req.session.isAdmin = true;
-            res.redirect('/admin.html');
-        } else {
-            res.send("<script>alert('Contraseña incorrecta'); window.location.href='/login.html';</script>");
-        }
-    });
+        app.post('/login-admin', express.urlencoded({ extended: true }), (req, res) => {
+            const { password } = req.body;
+            
+            if (password === 'Byakko2026#') {
+                req.session.isAdmin = true;
+                return res.redirect('/admin.html');
+            }
+            res.send("<script>alert('Contraseña incorrecta'); window.location.href='/auth-admin.html';</script>");
+        });
 
     app.get('/admin.html', verificarAdmin, (req, res) => {
         res.sendFile(__dirname + '/panel-secreto.html');
