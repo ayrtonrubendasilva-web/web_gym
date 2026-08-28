@@ -2,6 +2,8 @@ const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 require('dotenv').config({ quiet: true });
+
+
 const session = require('express-session');
 
 // Configuración de sesiones
