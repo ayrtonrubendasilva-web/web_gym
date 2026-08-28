@@ -11,9 +11,13 @@ app.use(express.static(__dirname));
 app.get('/', (req, res) => {  res.sendFile(__dirname + '/index.html');});
 
 // Si existe la variable DATABASE_URL...
-const connectionString = process.env.DATABASE_URL || 'mysql://usuario:contraseña@localhost:3306/tu_base_local';
-
-const db = mysql.createConnection(connectionString);
+const db = mysql.createConnection({
+    host: 'kodama.proxy.rlwy.net',
+    port: 25355,
+    user: 'root',
+    password: 'KHLihiztroalPWRSKjtwqXQPFhxvtdDx',
+    database: 'railway'
+});
 
 db.connect((err) => {
     if (err) {
