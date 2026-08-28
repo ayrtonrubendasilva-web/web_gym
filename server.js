@@ -2,7 +2,22 @@ const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 require('dotenv').config({ quiet: true });
+const session = require('express-session');
 
+// Configuración de sesiones
+app.use(session({
+    secret: 'Byakko2026#',
+    resave: false,
+    saveUninitialized: false
+}));
+
+// Middleware para proteger el panel
+function verificarAdmin(req, res, next) {
+    if (req.session && req.session.isAdmin) {
+        return next();
+    }
+    res.redirect('/login.html');
+}
 const app = express(); 
 app.use(express.json());
 
@@ -446,20 +461,50 @@ app.post('/api/admin/historial', (req, res) => {
 });
 
 // 2. OBTENER EL HISTORIAL DE UN GIMNASIO ESPECÍFICO
-app.get('/api/admin/historial/:dueno_id', (req, res) => {
-    const duenoId = req.params.dueno_id;
-    
-    const query = `
-        SELECT id, tipo_evento, detalles, fecha_evento 
-        FROM historial_gimnasios 
-        WHERE dueno_id = ? 
-        ORDER BY fecha_evento DESC
-    `;
-    db.query(query, [duenoId], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
+    app.get('/api/admin/historial/:dueno_id', (req, res) => {
+        const duenoId = req.params.dueno_id;
+        
+        const query = `
+            SELECT id, tipo_evento, detalles, fecha_evento 
+            FROM historial_gimnasios 
+            WHERE dueno_id = ? 
+            ORDER BY fecha_evento DESC
+        `;
+        db.query(query, [duenoId], (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(results);
+        });
     });
-});
+
+    // Middleware y rutas de autenticación
+    function verificarAdmin(req, res, next) {
+        if (req.session && req.session.isAdmin) {
+            return next();
+        }
+        res.redirect('/login.html');
+    }
+
+    app.post('/login', express.urlencoded({ extended: true }), (req, res) => {
+        const { password } = req.body;
+        const PASSWORD_ADMIN = "tu_contraseña_secreta"; // Cámbiala por la que quieras
+
+        if (password === PASSWORD_ADMIN) {
+            req.session.isAdmin = true;
+            res.redirect('/admin.html');
+        } else {
+            res.send("<script>alert('Contraseña incorrecta'); window.location.href='/login.html';</script>");
+        }
+    });
+
+    app.get('/admin.html', verificarAdmin, (req, res) => {
+        res.sendFile(__dirname + '/admin.html');
+    });
+
+    app.get('/logout', (req, res) => {
+        req.session.destroy();
+        res.redirect('/login.html');
+    });
+
 
 const PORT = process.env.PORT || 3000;
 
