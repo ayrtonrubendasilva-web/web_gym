@@ -509,8 +509,8 @@ app.post('/api/admin/historial', (req, res) => {
             res.send("<script>alert('Contraseña incorrecta'); window.location.href='/auth-admin.html';</script>");
         });
 
-    app.get('/admin.html', verificarAdmin, (req, res) => {
-    res.sendFile(__dirname + '/panel-secreto.html');
+    app.get('/admin.html', (req, res) => {
+        res.status(503).send("<h1>Sitio en mantenimiento</h1><p>El panel de administración se encuentra temporalmente deshabilitado.</p>");
     });
 
     app.get('/logout', (req, res) => {
